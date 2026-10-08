@@ -35,6 +35,8 @@ function tone(note, start, dur, { type = 'square', vol = 0.3, dest = master, sli
 }
 
 const SFX = {
+  blip: () => tone(88, ctx.currentTime, 0.025, { vol: 0.06 }),
+  boing: () => tone(64, ctx.currentTime, 0.18, { type: 'triangle', vol: 0.35, slide: 12 }),
   tap: () => tone(84, ctx.currentTime, 0.08, { vol: 0.2, slide: 5 }),
   select: () => {
     const t = ctx.currentTime

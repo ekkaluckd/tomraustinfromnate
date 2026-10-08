@@ -1,6 +1,13 @@
 import { useEffect, useRef } from 'react'
 import Phaser from 'phaser'
 import { SPRITES, spriteCanvas } from './sprites.js'
+import { sfx } from './sound.js'
+
+const REACTIONS = {
+  nate: ['💙', '😜', '🥰', 'hehe', '✌️'],
+  austin: ['😊', '❤️', '👋', '😎', 'aww'],
+}
+const RAIN = ['❤️', '💙', '🤍', '✨', '😊', '🎉']
 
 const SKY = { day: [0x7cc6ff, 0xd8efff], dusk: [0x3a55a0, 0xff9fb0], night: [0x0d1a3a, 0x3a55a0] }
 
@@ -23,6 +30,11 @@ class MainScene extends Phaser.Scene {
     )
     this.nate = this.add.sprite(0, 0, 'nate0').setOrigin(0.5, 1).play('nate')
     this.austin = this.add.sprite(0, 0, 'austin0').setOrigin(0.5, 1).play({ key: 'austin', delay: 250 })
+    for (const who of ['nate', 'austin']) {
+      const spr = this[who]
+      spr.setInteractive({ useHandCursor: true })
+      spr.on('pointerdown', () => this.react(spr, who))
+    }
     this.bigHeart = this.add.image(0, 0, 'heart').setOrigin(0.5)
     this.tweens.add({ targets: this.bigHeart, scaleX: '*=1.15', scaleY: '*=1.15', yoyo: true, repeat: -1, duration: 500 })
 
@@ -71,6 +83,11 @@ class MainScene extends Phaser.Scene {
 
   ambient() {
     const { width: w } = this.scale
+    if (this.mood === 'night') {
+      const t = this.add.text(Phaser.Math.Between(10, w - 10), -20, Phaser.Utils.Array.GetRandom(RAIN), { fontSize: `${this.px * 5}px` })
+      t.setOrigin(0.5)
+      this.tweens.add({ targets: t, y: this.groundY, angle: Phaser.Math.Between(-90, 90), duration: 2600, onComplete: () => t.destroy() })
+    }
     if (this.mood === 'water') {
       for (let i = 0; i < 2; i++) {
         const d = this.add.image(Phaser.Math.Between(0, w), -10, 'drop').setScale(this.px * 0.7)
@@ -83,6 +100,37 @@ class MainScene extends Phaser.Scene {
     } else {
       this.floatHeart(this.scale.width / 2 + Phaser.Math.Between(-this.px * 6, this.px * 6), 0.5)
     }
+  }
+
+  react(spr, who) {
+    sfx('boing')
+    this.hop(spr, 6, 0)
+    const t = this.add.text(spr.x, spr.y - spr.displayHeight - this.px * 2, Phaser.Utils.Array.GetRandom(REACTIONS[who]), {
+      fontFamily: '"Press Start 2P"',
+      fontSize: `${this.px * 4}px`,
+      color: '#0d1a3a',
+      backgroundColor: '#ffffff',
+      padding: { x: this.px * 2, y: this.px * 1.5 },
+    })
+    t.setOrigin(0.5, 1).setScale(0)
+    this.tweens.add({ targets: t, scale: 1, duration: 150, ease: 'Back.easeOut' })
+    this.tweens.add({ targets: t, alpha: 0, y: t.y - this.px * 6, delay: 900, duration: 400, onComplete: () => t.destroy() })
+  }
+
+  // Always jump from the ground and land back on it, even if tapped mid-jump.
+  hop(spr, height, repeat) {
+    this.tweens.killTweensOf(spr)
+    spr.y = this.groundY
+    this.tweens.add({
+      targets: spr,
+      y: this.groundY - this.px * height,
+      yoyo: true,
+      repeat,
+      duration: 170,
+      ease: 'Quad.easeOut',
+      onComplete: () => (spr.y = this.groundY),
+      onStop: () => (spr.y = this.groundY),
+    })
   }
 
   floatHeart(x, size = 0.6) {
@@ -102,7 +150,7 @@ class MainScene extends Phaser.Scene {
       this.time.delayedCall(i * 60, () => this.floatHeart(Phaser.Math.Between(0, this.scale.width), 0.7))
     }
     for (const s of [this.nate, this.austin]) {
-      this.tweens.add({ targets: s, y: this.groundY - this.px * 4, yoyo: true, duration: 180, repeat: 1 })
+      this.hop(s, 4, 1)
     }
   }
 }

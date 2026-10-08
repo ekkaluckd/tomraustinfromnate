@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Stage from './Stage.jsx'
 import { sendMessage, sendPhoto, compressImage } from './telegram.js'
 import { sfx, startMusic, setMuted } from './sound.js'
@@ -8,27 +8,81 @@ const QUESTIONS = [
     id: 'smile',
     mood: 'day',
     title: 'Level 1',
-    text: "How are you today? Don't forget to look in the mirror and see your smile - see how cute it is!",
-    chips: ['Feeling great!', 'Pretty good', 'A bit tired', 'Okay I looked. Cute.'],
+    text: "How are you today? 🌤️ Don't forget to look in the mirror and see your smile - see how cute it is! 🪞😊",
+    chips: ['😄 Feeling great!', '🙂 Pretty good', '😴 A bit tired', '🪞 Okay I looked. Cute.'],
   },
   {
     id: 'water',
     mood: 'water',
     title: 'Level 2',
-    text: 'Have you had enough water today? It is SO hot out there, haha!',
-    chips: ['Yes, hydrated!', 'Drinking now', 'Oops... not yet'],
+    text: 'Have you had enough water today? 💧 It is SO hot out there, haha! 🥵☀️',
+    chips: ['💦 Yes, hydrated!', '🥤 Drinking now', '🙈 Oops... not yet'],
   },
   {
     id: 'travel',
     mood: 'dusk',
     title: 'Level 3',
-    text: 'Are you tired from traveling today? I hope you have had dinner already.',
-    chips: ['Ate already!', 'Eating soon', 'A little tired', 'Not tired at all'],
+    text: 'Are you tired from traveling today? 🚕 I hope you have had dinner already. 🍜',
+    chips: ['🍽️ Ate already!', '⏳ Eating soon', '🥱 A little tired', '💪 Not tired at all'],
   },
 ]
 
 const STEPS = ['intro', ...QUESTIONS.map((q) => q.id), 'selfie', 'thanks']
-const SMILE_OPTIONS = ['Yes, big smile!', 'A little smile', 'Hmm, not yet']
+const SMILE_OPTIONS = ['😁 Yes, big smile!', '🙂 A little smile', '🤔 Hmm, not yet']
+
+// Types text out like an RPG dialog box; tap it to show everything at once.
+function Typer({ text }) {
+  const chars = Array.from(text)
+  const [n, setN] = useState(0)
+  useEffect(() => {
+    setN(0)
+    const id = setInterval(() => {
+      setN((v) => {
+        if (v >= chars.length) {
+          clearInterval(id)
+          return v
+        }
+        if (v % 3 === 0) sfx('blip')
+        return v + 1
+      })
+    }, 28)
+    return () => clearInterval(id)
+  }, [text])
+  const done = n >= chars.length
+  return (
+    <p className="typer" aria-label={text} onClick={() => setN(chars.length)}>
+      <span aria-hidden="true">{chars.slice(0, n).join('')}</span>
+      {!done && <span className="caret" aria-hidden="true">▌</span>}
+    </p>
+  )
+}
+
+// True while the panel has more content below the visible area.
+function useMoreBelow(ref) {
+  const [more, setMore] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    const check = () => setMore(el.scrollHeight - el.scrollTop - el.clientHeight > 24)
+    const ro = new ResizeObserver(check)
+    ro.observe(el)
+    for (const child of el.children) ro.observe(child)
+    const mo = new MutationObserver(() => {
+      for (const child of el.children) ro.observe(child)
+      check()
+    })
+    mo.observe(el, { childList: true, subtree: true })
+    el.addEventListener('scroll', check, { passive: true })
+    el.addEventListener('load', check, true) // images finishing loading
+    check()
+    return () => {
+      ro.disconnect()
+      mo.disconnect()
+      el.removeEventListener('scroll', check)
+      el.removeEventListener('load', check, true)
+    }
+  }, [ref])
+  return more
+}
 
 function useSender() {
   const [status, setStatus] = useState('')
@@ -56,6 +110,8 @@ export default function App() {
   const [cheer, setCheer] = useState(0)
   const [status, send] = useSender()
   const [muted, setMute] = useState(false)
+  const panel = useRef(null)
+  const moreBelow = useMoreBelow(panel)
 
   const toggleMute = () => {
     setMuted(!muted)
@@ -72,7 +128,7 @@ export default function App() {
     setDraft('')
     setCheer((c) => c + 1)
     sfx(n === STEPS.length - 1 ? 'win' : 'next')
-    window.scrollTo(0, 0)
+    panel.current?.scrollTo(0, 0)
   }
 
   const submitAnswer = () => {
@@ -128,11 +184,12 @@ export default function App() {
 
         <Stage mood={mood} cheer={cheer} />
 
-        <main className="panel">
+        <main className="panel" ref={panel}>
           {name === 'intro' && (
             <section className="card">
-              <h1>Hi Austin!</h1>
-              <p>Nate made you a tiny game.</p>
+              <h1>Hi Austin! 👋</h1>
+              <p>Nate made you a tiny game. 🎮💙</p>
+              <small>Psst... try tapping the characters up there!</small>
               <p>3 little questions, 1 smile mission. Tap one step at a time.</p>
               <button className="btn red" onClick={() => {
                   startMusic()
@@ -146,7 +203,7 @@ export default function App() {
           {q && (
             <section className="card" key={q.id}>
               <h2>{q.title}</h2>
-              <p>{q.text}</p>
+              <Typer text={q.text} />
               <div className="chips">
                 {q.chips.map((c) => (
                   <button key={c} className={`chip ${draft === c ? 'picked' : ''}`} onClick={() => {
@@ -172,7 +229,7 @@ export default function App() {
 
           {name === 'selfie' && (
             <section className="card">
-              <h2>Final Level</h2>
+              <h2>⭐ Final Level ⭐</h2>
               <p>Did any of this make you smile?</p>
               <div className="chips">
                 {SMILE_OPTIONS.map((c) => (
@@ -199,7 +256,7 @@ export default function App() {
 
           {name === 'thanks' && (
             <section className="card">
-              <h2>Thank you for playing!</h2>
+              <h2>Thank you for playing! 🎉</h2>
               <img className="memory" src="./us.jpg" alt="Austin and Nate" />
               <p>Your smile and your warmth - I still think about them, always.</p>
               <p className="sign">- Nate ♥</p>
@@ -211,6 +268,14 @@ export default function App() {
 
           {status === 'error' && <p className="toast">Could not send - check the internet and try again.</p>}
         </main>
+        <button
+          className={`scroll-hint ${moreBelow ? 'show' : ''}`}
+          onClick={() => panel.current?.scrollBy({ top: panel.current.clientHeight * 0.7, behavior: 'smooth' })}
+          aria-label="Scroll down for more"
+          tabIndex={moreBelow ? 0 : -1}
+        >
+          ▼
+        </button>
       </div>
     </div>
   )
