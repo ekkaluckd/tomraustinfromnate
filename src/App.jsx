@@ -309,7 +309,7 @@ export default function App() {
               <p>Your smile and your warmth - I still think about them, always. I want to recharge your heart with a big hug. 🤗💙</p>
               <p>
                 You must be so tired today - traveling, looking at apartments, meeting agents. I hope everything went
-                well for you. I'm always sending my care to you from here, and I miss your hugs all the time. 💙
+                well for you. I'm always sending my care to you from here, and I miss your hugs all the time. and wish that i can hug you again soonest 💙
               </p>
               <p className="sign">- Nate ♥</p>
               <button className="btn" onClick={restart}>
