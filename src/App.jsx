@@ -120,6 +120,7 @@ export default function App() {
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState({})
   const [draft, setDraft] = useState('')
+  const [pick, setPick] = useState('')
   const [smile, setSmile] = useState('')
   const [photo, setPhoto] = useState(null)
   const [cheer, setCheer] = useState(0)
@@ -160,6 +161,7 @@ export default function App() {
     setTimeout(() => {
       setStep(n)
       setDraft('')
+      setPick('')
       setWipe('out')
       setCheer((c) => c + 1)
       setTimeout(() => setWipe(null), WIPE_MS)
@@ -167,7 +169,8 @@ export default function App() {
   }
 
   const submitAnswer = () => {
-    const text = draft.trim()
+    // Chip and typed text are independent; either one (or both) is enough.
+    const text = [pick, draft.trim()].filter(Boolean).join(' - ')
     if (!text) return
     setAnswers((a) => ({ ...a, [q.id]: text }))
     send(() => sendMessage(`💌 Austin - ${q.title}\nQ: ${q.text}\nA: ${text}`))
@@ -186,7 +189,7 @@ export default function App() {
     const summary =
       `🎉 Austin finished the game!\n\n` +
       QUESTIONS.map((x) => `${x.title}: ${answers[x.id] || '-'}`).join('\n') +
-      `\n\nDid this make you smile? ${smile}`
+      `\n\nDid this make you smile? ${smile || '-'}`
     const ok = await send(async () => {
       if (photo) await sendPhoto(await compressImage(photo.file), summary)
       else await sendMessage(summary + '\n(no selfie this time)')
@@ -243,8 +246,8 @@ export default function App() {
               <Typer text={q.text} />
               <div className="chips">
                 {q.chips.map((c) => (
-                  <button key={c} className={`chip ${draft === c ? 'picked' : ''}`} onClick={() => {
-                    setDraft(c)
+                  <button key={c} className={`chip ${pick === c ? 'picked' : ''}`} onClick={() => {
+                    setPick(pick === c ? '' : c)
                     sfx('select')
                   }}>
                     {c}
@@ -258,7 +261,7 @@ export default function App() {
                 rows={3}
                 maxLength={500}
               />
-              <button className="btn" disabled={!draft.trim()} onClick={submitAnswer}>
+              <button className="btn" disabled={!pick && !draft.trim()} onClick={submitAnswer}>
                 NEXT ▶
               </button>
             </section>
@@ -271,7 +274,7 @@ export default function App() {
               <div className="chips">
                 {SMILE_OPTIONS.map((c) => (
                   <button key={c} className={`chip ${smile === c ? 'picked' : ''}`} onClick={() => {
-                    setSmile(c)
+                    setSmile(smile === c ? '' : c)
                     sfx('select')
                   }}>
                     {c}
@@ -292,10 +295,10 @@ export default function App() {
                 rows={3}
                 maxLength={600}
               />
-              <button className="btn red" disabled={!smile || status === 'sending'} onClick={finish}>
+              <button className="btn red" disabled={!(smile || note.trim() || photo) || status === 'sending'} onClick={finish}>
                 {status === 'sending' ? 'SENDING...' : 'SEND TO NATE ♥'}
               </button>
-              {!photo && smile && <small>No selfie? You can still send, but Nate will be sad :(</small>}
+              {!photo && (smile || note.trim()) && <small>No selfie? You can still send, but Nate will be sad :(</small>}
             </section>
           )}
 
