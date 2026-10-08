@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Stage from './Stage.jsx'
 import { sendMessage, sendPhoto, compressImage } from './telegram.js'
+import { sfx, startMusic, setMuted } from './sound.js'
 
 const QUESTIONS = [
   {
@@ -54,6 +55,13 @@ export default function App() {
   const [photo, setPhoto] = useState(null)
   const [cheer, setCheer] = useState(0)
   const [status, send] = useSender()
+  const [muted, setMute] = useState(false)
+
+  const toggleMute = () => {
+    setMuted(!muted)
+    setMute(!muted)
+    if (muted) sfx('tap')
+  }
 
   const name = STEPS[step]
   const q = QUESTIONS.find((x) => x.id === name)
@@ -63,6 +71,7 @@ export default function App() {
     setStep(n)
     setDraft('')
     setCheer((c) => c + 1)
+    sfx(n === STEPS.length - 1 ? 'win' : 'next')
     window.scrollTo(0, 0)
   }
 
@@ -79,6 +88,7 @@ export default function App() {
     if (!file) return
     if (photo) URL.revokeObjectURL(photo.url)
     setPhoto({ file, url: URL.createObjectURL(file) })
+    sfx('photo')
   }
 
   const finish = async () => {
@@ -111,7 +121,9 @@ export default function App() {
               <i key={s} className={i < step ? 'on' : ''} />
             ))}
           </span>
-          <span>NATE</span>
+          <button className="mute" onClick={toggleMute} aria-label={muted ? 'Turn sound on' : 'Turn sound off'}>
+            {muted ? '♪ OFF' : '♪ ON'}
+          </button>
         </header>
 
         <Stage mood={mood} cheer={cheer} />
@@ -122,7 +134,10 @@ export default function App() {
               <h1>Hi Austin!</h1>
               <p>Nate made you a tiny game.</p>
               <p>3 little questions, 1 smile mission. Tap one step at a time.</p>
-              <button className="btn red" onClick={() => go(1)}>
+              <button className="btn red" onClick={() => {
+                  startMusic()
+                  go(1)
+                }}>
                 ▶ START
               </button>
             </section>
@@ -134,7 +149,10 @@ export default function App() {
               <p>{q.text}</p>
               <div className="chips">
                 {q.chips.map((c) => (
-                  <button key={c} className={`chip ${draft === c ? 'picked' : ''}`} onClick={() => setDraft(c)}>
+                  <button key={c} className={`chip ${draft === c ? 'picked' : ''}`} onClick={() => {
+                      setDraft(c)
+                      sfx('select')
+                    }}>
                     {c}
                   </button>
                 ))}
@@ -158,13 +176,16 @@ export default function App() {
               <p>Did any of this make you smile?</p>
               <div className="chips">
                 {SMILE_OPTIONS.map((c) => (
-                  <button key={c} className={`chip ${smile === c ? 'picked' : ''}`} onClick={() => setSmile(c)}>
+                  <button key={c} className={`chip ${smile === c ? 'picked' : ''}`} onClick={() => {
+                      setSmile(c)
+                      sfx('select')
+                    }}>
                     {c}
                   </button>
                 ))}
               </div>
               <p>Mission: take a smiling selfie and send it to me!</p>
-              <label className="btn ghost">
+              <label className="btn ghost" onClick={() => sfx('tap')}>
                 {photo ? '↺ RETAKE' : '📷 TAKE SELFIE'}
                 <input type="file" accept="image/*" capture="user" onChange={pickPhoto} hidden />
               </label>
