@@ -49,6 +49,8 @@ body {
   flex: 1 1 auto;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  background: var(--sky-soft);
+  isolation: isolate;
   padding: 16px 16px max(16px, env(safe-area-inset-bottom));
 }
 
@@ -131,3 +133,15 @@ textarea:focus, .chip:focus-visible, .btn:focus-visible { outline: 3px dashed va
 }
 .scroll-hint.show { opacity: .9; transform: none; pointer-events: auto; animation: nudge 1s ease-in-out infinite; }
 @keyframes nudge { 50% { transform: translateY(4px); } }
+
+/* Pixel-block transition */
+.wipe {
+  position: absolute; inset: 0; z-index: 20;
+  display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(14, 1fr);
+}
+.wipe i { background: var(--ink); transform: scale(0); }
+.wipe.in i { animation: blockIn .12s steps(3) forwards; }
+.wipe.out i { transform: scale(1); animation: blockOut .12s steps(3) forwards; }
+@keyframes blockIn { to { transform: scale(1.02); } }
+@keyframes blockOut { to { transform: scale(0); } }
+@media (prefers-reduced-motion: reduce) { .wipe { display: none; } }

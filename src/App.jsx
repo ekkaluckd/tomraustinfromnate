@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Stage from './Stage.jsx'
 import { sendMessage, sendPhoto, compressImage } from './telegram.js'
 import { sfx, startMusic, setMuted } from './sound.js'
@@ -84,6 +84,21 @@ function useMoreBelow(ref) {
   return more
 }
 
+// Pixel-block screen wipe between steps.
+const COLS = 8
+const ROWS = 14
+const WIPE_MS = 12 * (COLS + ROWS) + 120
+function Wipe({ phase }) {
+  if (!phase) return null
+  return (
+    <div className={`wipe ${phase}`} aria-hidden="true">
+      {Array.from({ length: COLS * ROWS }, (_, i) => (
+        <i key={i} style={{ animationDelay: `${((i % COLS) + Math.floor(i / COLS)) * 12}ms` }} />
+      ))}
+    </div>
+  )
+}
+
 function useSender() {
   const [status, setStatus] = useState('')
   const send = async (fn) => {
@@ -108,6 +123,8 @@ export default function App() {
   const [smile, setSmile] = useState('')
   const [photo, setPhoto] = useState(null)
   const [cheer, setCheer] = useState(0)
+  const [note, setNote] = useState('')
+  const [wipe, setWipe] = useState(null)
   const [status, send] = useSender()
   const [muted, setMute] = useState(false)
   const panel = useRef(null)
@@ -123,12 +140,30 @@ export default function App() {
   const q = QUESTIONS.find((x) => x.id === name)
   const mood = q?.mood || (name === 'thanks' ? 'night' : 'day')
 
-  const go = (n) => {
-    setStep(n)
-    setDraft('')
-    setCheer((c) => c + 1)
-    sfx(n === STEPS.length - 1 ? 'win' : 'next')
+  // Tell Nate when Austin opens the game (once per browser session).
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem('opened')) return
+      sessionStorage.setItem('opened', '1')
+    } catch { }
+    sendMessage('👀 Austin just opened the game!').catch(console.error)
+  }, [])
+
+  // Reset scroll after the new step has rendered, so no stale content lingers.
+  useLayoutEffect(() => {
     panel.current?.scrollTo(0, 0)
+  }, [step])
+
+  const go = (n) => {
+    sfx(n === STEPS.length - 1 ? 'win' : 'next')
+    setWipe('in')
+    setTimeout(() => {
+      setStep(n)
+      setDraft('')
+      setWipe('out')
+      setCheer((c) => c + 1)
+      setTimeout(() => setWipe(null), WIPE_MS)
+    }, WIPE_MS)
   }
 
   const submitAnswer = () => {
@@ -155,6 +190,7 @@ export default function App() {
     const ok = await send(async () => {
       if (photo) await sendPhoto(await compressImage(photo.file), summary)
       else await sendMessage(summary + '\n(no selfie this time)')
+      if (note.trim()) await sendMessage(`💬 Austin says:\n${note.trim()}`)
     })
     if (ok) go(step + 1)
   }
@@ -163,6 +199,7 @@ export default function App() {
     if (photo) URL.revokeObjectURL(photo.url)
     setAnswers({})
     setSmile('')
+    setNote('')
     setPhoto(null)
     go(0)
   }
@@ -187,14 +224,14 @@ export default function App() {
         <main className="panel" ref={panel}>
           {name === 'intro' && (
             <section className="card">
-              <h1>Hi Austin! 👋</h1>
-              <p>Nate made you a tiny game. 🎮💙</p>
+              <h1>Hi Sweetie Austin! 👋</h1>
+              <p>I made you a tiny game. 🎮💙</p>
               <small>Psst... try tapping the characters up there!</small>
               <p>3 little questions, 1 smile mission. Tap one step at a time.</p>
               <button className="btn red" onClick={() => {
-                  startMusic()
-                  go(1)
-                }}>
+                startMusic()
+                go(1)
+              }}>
                 ▶ START
               </button>
             </section>
@@ -207,9 +244,9 @@ export default function App() {
               <div className="chips">
                 {q.chips.map((c) => (
                   <button key={c} className={`chip ${draft === c ? 'picked' : ''}`} onClick={() => {
-                      setDraft(c)
-                      sfx('select')
-                    }}>
+                    setDraft(c)
+                    sfx('select')
+                  }}>
                     {c}
                   </button>
                 ))}
@@ -234,9 +271,9 @@ export default function App() {
               <div className="chips">
                 {SMILE_OPTIONS.map((c) => (
                   <button key={c} className={`chip ${smile === c ? 'picked' : ''}`} onClick={() => {
-                      setSmile(c)
-                      sfx('select')
-                    }}>
+                    setSmile(c)
+                    sfx('select')
+                  }}>
                     {c}
                   </button>
                 ))}
@@ -247,6 +284,14 @@ export default function App() {
                 <input type="file" accept="image/*" capture="user" onChange={pickPhoto} hidden />
               </label>
               {photo && <img className="preview" src={photo.url} alt="Your selfie" />}
+              <p>Anything you want to tell Nate? 💌</p>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Optional message..."
+                rows={3}
+                maxLength={600}
+              />
               <button className="btn red" disabled={!smile || status === 'sending'} onClick={finish}>
                 {status === 'sending' ? 'SENDING...' : 'SEND TO NATE ♥'}
               </button>
@@ -268,6 +313,7 @@ export default function App() {
 
           {status === 'error' && <p className="toast">Could not send - check the internet and try again.</p>}
         </main>
+        <Wipe phase={wipe} />
         <button
           className={`scroll-hint ${moreBelow ? 'show' : ''}`}
           onClick={() => panel.current?.scrollBy({ top: panel.current.clientHeight * 0.7, behavior: 'smooth' })}
