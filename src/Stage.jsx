@@ -6,6 +6,7 @@ import { sfx } from './sound.js'
 const REACTIONS = {
   nate: ['💙', '😜', '🥰', 'hehe', '✌️'],
   austin: ['😊', '❤️', '👋', '😎', 'aww'],
+  hug: ['🤗', '💞', 'hug!', '🫂', '💙❤️'],
 }
 const RAIN = ['❤️', '💙', '🤍', '✨', '😊', '🎉']
 
@@ -21,6 +22,7 @@ class MainScene extends Phaser.Scene {
       if (!this.textures.exists(key)) this.textures.addCanvas(key, spriteCanvas(def))
     }
     this.anims.create({ key: 'austin', frames: [{ key: 'austin0' }, { key: 'austin1' }], frameRate: 2, repeat: -1 })
+    this.anims.create({ key: 'hug', frames: [{ key: 'hug0' }, { key: 'hug1' }], frameRate: 2, repeat: -1 })
     this.anims.create({ key: 'nate', frames: [{ key: 'nate0' }, { key: 'nate1' }], frameRate: 2, repeat: -1 })
 
     this.sky = this.add.graphics()
@@ -30,6 +32,8 @@ class MainScene extends Phaser.Scene {
     )
     this.nate = this.add.sprite(0, 0, 'nate0').setOrigin(0.5, 1).play('nate')
     this.austin = this.add.sprite(0, 0, 'austin0').setOrigin(0.5, 1).play({ key: 'austin', delay: 250 })
+    this.hug = this.add.sprite(0, 0, 'hug0').setOrigin(0.5, 1).play('hug').setVisible(false)
+    this.hug.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.react(this.hug, 'hug'))
     for (const who of ['nate', 'austin']) {
       const spr = this[who]
       spr.setInteractive({ useHandCursor: true })
@@ -40,12 +44,14 @@ class MainScene extends Phaser.Scene {
 
     this.mood = this.game.registry.get('mood') || 'day'
     this.layout()
+    this.setHugging(this.mood === 'night')
     this.scale.on('resize', () => this.layout())
 
     this.time.addEvent({ delay: 700, loop: true, callback: () => this.ambient() })
     this.game.events.on('mood', (m) => {
       this.mood = m
       this.drawSky()
+      this.setHugging(m === 'night')
     })
     this.game.events.on('cheer', () => this.burst())
   }
@@ -58,7 +64,16 @@ class MainScene extends Phaser.Scene {
     this.clouds.forEach((c, i) => c.setScale(this.px * 0.8).setPosition((w / 3) * i + 30, this.px * (4 + i * 4)))
     this.nate.setScale(this.px).setPosition(w / 2 - this.px * 11, this.groundY)
     this.austin.setScale(this.px).setPosition(w / 2 + this.px * 11, this.groundY)
-    this.bigHeart.setScale(this.px * 0.9).setPosition(w / 2, this.groundY - this.px * 18)
+    this.hug.setScale(this.px).setPosition(w / 2, this.groundY)
+    this.bigHeart.setScale(this.px * 0.9).setPosition(w / 2, this.groundY - this.px * (this.hug.visible ? 26 : 18))
+  }
+
+  setHugging(on) {
+    this.hug.setVisible(on)
+    this.nate.setVisible(!on)
+    this.austin.setVisible(!on)
+    if (on) this.hop(this.hug, 3, 1)
+    this.layout()
   }
 
   drawSky() {
@@ -149,7 +164,7 @@ class MainScene extends Phaser.Scene {
     for (let i = 0; i < 10; i++) {
       this.time.delayedCall(i * 60, () => this.floatHeart(Phaser.Math.Between(0, this.scale.width), 0.7))
     }
-    for (const s of [this.nate, this.austin]) {
+    for (const s of [this.nate, this.austin, this.hug].filter((x) => x.visible)) {
       this.hop(s, 4, 1)
     }
   }

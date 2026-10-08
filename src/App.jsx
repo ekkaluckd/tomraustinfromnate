@@ -258,7 +258,7 @@ export default function App() {
             <section className="card">
               <h2>Thank you for playing! 🎉</h2>
               <img className="memory" src="./us.jpg" alt="Austin and Nate" />
-              <p>Your smile and your warmth - I still think about them, always.</p>
+              <p>Your smile and your warmth - I still think about them, always. I want to recharge your heart with a big hug. 🤗💙</p>
               <p className="sign">- Nate ♥</p>
               <button className="btn" onClick={restart}>
                 ↺ PLAY AGAIN

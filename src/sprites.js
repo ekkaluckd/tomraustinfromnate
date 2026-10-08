@@ -79,6 +79,49 @@ NATE_WAVE[10] = '..SKKKRRRRKKK...'
 NATE_WAVE[11] = '...KKKKRRKKKKK..'
 NATE_WAVE[12] = '...KKKKKKKKKKS..'
 
+// Smaller Nate for the hug scene (12 wide x 15 tall), right arm reaching around Austin.
+const NATE_SMALL = [
+  '..HHHHHHH...',
+  '.HHHHHHHHH..',
+  '.HHSSSSSSH..',
+  '.GgEGGgEG...',
+  '..PSSSSSP...',
+  '..SSSRRSS...',
+  '...SSSSS....',
+  '..KKRRRKK...',
+  '.KKKKRKKKKSS',
+  '.SKKKKKKKK..',
+  '..KKKKKKK...',
+  '..NNNNNNN...',
+  '..NNN.NNN...',
+  '..NNN.NNN...',
+  '..WWW.WWW...',
+]
+
+// Builds a 24x20 hug: Austin behind, Nate (shorter) leaning in front.
+function hugFrame(austinRows, nateRows, nateLift) {
+  const W = 24
+  const H = 20
+  const grid = Array.from({ length: H }, () => Array(W).fill('.'))
+  const paste = (rows, ox, oy) =>
+    rows.forEach((r, y) => [...r].forEach((c, x) => c !== '.' && grid[y + oy] && (grid[y + oy][x + ox] = c)))
+  paste(austinRows, 8, 0)
+  paste(nateRows, 2, H - nateRows.length - nateLift)
+  // Austin's arm wraps over Nate's shoulder
+  const armY = H - nateRows.length - nateLift + 7
+  for (let x = 8; x <= 10; x++) grid[armY][x] = 'W'
+  for (let x = 2; x <= 7; x++) grid[armY][x] = 'S'
+  return grid.map((r) => r.join(''))
+}
+const AUSTIN_HUG = AUSTIN_BASE.slice()
+AUSTIN_HUG[5] = '....SEESSEES....'
+AUSTIN_HUG[13] = '...WWWWWWWWWWS..'
+AUSTIN_HUG[14] = '...WwWWWWWWwWS..'
+const NATE_HUG_B = NATE_SMALL.slice()
+NATE_HUG_B[3] = '.GgEEGEEG...' // eyes closed, happy squeeze
+const HUG0 = hugFrame(AUSTIN_HUG, NATE_SMALL, 0)
+const HUG1 = hugFrame(AUSTIN_BASE.map((r, i) => (i === 5 ? '....SEESSEES....' : AUSTIN_HUG[i])), NATE_HUG_B, 1)
+
 const HEART = [
   '.RR.RR.',
   'RRRRRRR',
@@ -102,6 +145,8 @@ export const SPRITES = {
   austin1: { rows: AUSTIN_WAVE, outline: true },
   nate0: { rows: NATE_BASE, outline: true },
   nate1: { rows: NATE_WAVE, outline: true },
+  hug0: { rows: HUG0, outline: true },
+  hug1: { rows: HUG1, outline: true },
   heart: { rows: HEART, outline: true },
   cloud: { rows: CLOUD, outline: false },
   drop: { rows: DROP, outline: true },
