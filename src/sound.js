@@ -113,3 +113,15 @@ export function setMuted(m) {
   if (m) stopMusic()
   else startMusic()
 }
+
+// Pause all audio when the tab is hidden / app is backgrounded, resume when back.
+if (typeof document !== 'undefined') {
+  const sync = () => {
+    if (!ctx) return
+    if (document.hidden) ctx.suspend()
+    else if (!muted) ctx.resume()
+  }
+  document.addEventListener('visibilitychange', sync)
+  window.addEventListener('pagehide', () => ctx?.suspend())
+  window.addEventListener('pageshow', sync)
+}
