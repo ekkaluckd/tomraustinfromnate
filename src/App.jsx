@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Stage from './Stage.jsx'
 import { sendMessage, sendPhoto, compressImage } from './telegram.js'
 import { sfx, startMusic, setMuted } from './sound.js'
+import { deviceReport } from './deviceInfo.js'
 
 const QUESTIONS = [
   {
@@ -141,13 +142,9 @@ export default function App() {
   const q = QUESTIONS.find((x) => x.id === name)
   const mood = q?.mood || (name === 'thanks' ? 'night' : 'day')
 
-  // Tell Nate when Austin opens the game (once per browser session).
+  // Tell Nate every time the game is opened.
   useEffect(() => {
-    try {
-      if (sessionStorage.getItem('opened')) return
-      sessionStorage.setItem('opened', '1')
-    } catch { }
-    sendMessage('👀 Austin just opened the game!').catch(console.error)
+    sendMessage(['👀 Austin just opened the game!', '', deviceReport()].join('\n')).catch(console.error)
   }, [])
 
   // Reset scroll after the new step has rendered, so no stale content lingers.
