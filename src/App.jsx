@@ -281,7 +281,7 @@ export default function App() {
                   </button>
                 ))}
               </div>
-              <p>Mission: take a smiling selfie and send it to me!</p>
+              <p>Optional mission: send me a smile if you feel like it! 📷</p>
               <label className="btn ghost" onClick={() => sfx('tap')}>
                 {photo ? '↺ RETAKE' : '📷 TAKE SELFIE'}
                 <input type="file" accept="image/*" capture="user" onChange={pickPhoto} hidden />
@@ -298,7 +298,7 @@ export default function App() {
               <button className="btn red" disabled={!(smile || note.trim() || photo) || status === 'sending'} onClick={finish}>
                 {status === 'sending' ? 'SENDING...' : 'SEND TO NATE ♥'}
               </button>
-              {!photo && (smile || note.trim()) && <small>No selfie? You can still send, but Nate will be sad :(</small>}
+              {!photo && (smile || note.trim()) && <small>No selfie? That's totally okay too :)</small>}
             </section>
           )}
 
@@ -306,10 +306,10 @@ export default function App() {
             <section className="card">
               <h2>Thank you for playing! 🎉</h2>
               <img className="memory" src="./us.jpg" alt="Austin and Nate" />
-              <p>Your smile and your warmth - I still think about them, always. I want to recharge your heart with a big hug. 🤗💙</p>
+              <p>Your smile and your warmth - that day with you was really special. I'm glad I got to see it. Sending you a little hug from here. 🤗</p>
               <p>
                 You must be so tired today - traveling, looking at apartments, meeting agents. I hope everything went
-                well for you. I'm always sending my care to you from here, and I miss your hugs all the time. and wish that i can hug you again soonest 💙
+                well for you. No rush to reply - I just wanted to make you smile. 🙂
               </p>
               <p className="sign">- Nate ♥</p>
               <button className="btn" onClick={restart}>
