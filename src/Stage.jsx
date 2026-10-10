@@ -8,9 +8,9 @@ const REACTIONS = {
   austin: ['😊', '❤️', '👋', '😎', 'aww'],
   hug: ['🤗', '💞', 'hug!', '🫂', '💙❤️'],
 }
-const RAIN = ['❤️', '💙', '🤍', '✨', '😊', '🎉']
+const RAIN = ['✨', '🌟', '🍀', '🌈', '💫', '🕊️']
 
-const SKY = { day: [0x7cc6ff, 0xd8efff], dusk: [0x3a55a0, 0xff9fb0], night: [0x0d1a3a, 0x3a55a0] }
+const SKY = { day: [0x7cc6ff, 0xd8efff], dusk: [0x3a55a0, 0xff9fb0], night: [0x0d1a3a, 0x3a55a0], dawn: [0x7cc6ff, 0xffd9a8] }
 
 class MainScene extends Phaser.Scene {
   constructor() {
@@ -44,14 +44,14 @@ class MainScene extends Phaser.Scene {
 
     this.mood = this.game.registry.get('mood') || 'day'
     this.layout()
-    this.setHugging(this.mood === 'night')
+    this.hugThenWave(this.mood === 'dawn')
     this.scale.on('resize', () => this.layout())
 
     this.time.addEvent({ delay: 700, loop: true, callback: () => this.ambient() })
     this.game.events.on('mood', (m) => {
       this.mood = m
       this.drawSky()
-      this.setHugging(m === 'night')
+      this.hugThenWave(m === 'dawn')
     })
     this.game.events.on('cheer', () => this.burst())
   }
@@ -66,6 +66,13 @@ class MainScene extends Phaser.Scene {
     this.austin.setScale(this.px).setPosition(w / 2 + this.px * 11, this.groundY)
     this.hug.setScale(this.px).setPosition(w / 2, this.groundY)
     this.bigHeart.setScale(this.px * 0.9).setPosition(w / 2, this.groundY - this.px * (this.hug.visible ? 26 : 18))
+  }
+
+  // Ending: hug for a few seconds, then step apart and wave goodbye.
+  hugThenWave(on) {
+    this.hugTimer?.remove()
+    this.setHugging(on)
+    if (on) this.hugTimer = this.time.delayedCall(2000, () => this.setHugging(false))
   }
 
   setHugging(on) {
@@ -98,7 +105,7 @@ class MainScene extends Phaser.Scene {
 
   ambient() {
     const { width: w } = this.scale
-    if (this.mood === 'night') {
+    if (this.mood === 'dawn') {
       const t = this.add.text(Phaser.Math.Between(10, w - 10), -20, Phaser.Utils.Array.GetRandom(RAIN), { fontSize: `${this.px * 5}px` })
       t.setOrigin(0.5)
       this.tweens.add({ targets: t, y: this.groundY, angle: Phaser.Math.Between(-90, 90), duration: 2600, onComplete: () => t.destroy() })

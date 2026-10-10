@@ -140,7 +140,7 @@ export default function App() {
 
   const name = STEPS[step]
   const q = QUESTIONS.find((x) => x.id === name)
-  const mood = q?.mood || (name === 'thanks' ? 'night' : 'day')
+  const mood = q?.mood || (name === 'thanks' ? 'dawn' : 'day')
 
   // Tell Nate every time the game is opened.
   useEffect(() => {
@@ -301,14 +301,17 @@ export default function App() {
 
           {name === 'thanks' && (
             <section className="card">
-              <h2>Thank you for playing! 🎉</h2>
-              <img className="memory" src="./us.jpg" alt="Austin and Nate" />
-              <p>Your smile and your warmth - that day with you was really special. I'm glad I got to see it. Sending you a little hug from here. 🤗</p>
+              <h2>Thank you for playing! 🌟</h2>
               <p>
                 You must be so tired today - traveling, looking at apartments, meeting agents. I hope everything went
-                well for you. No rush to reply - I just wanted to make you smile. 🙂
+                well for you.
               </p>
-              <p className="sign">- Nate ♥</p>
+              <p>
+                Wherever life takes you next, I hope you find happiness and everything you're looking for. 🍀 Your smile
+                is a good one - keep it close.
+              </p>
+              <p>I'll always be wishing you well. 🌈</p>
+              <p className="sign">- Nate</p>
               <button className="btn" onClick={restart}>
                 ↺ PLAY AGAIN
               </button>
